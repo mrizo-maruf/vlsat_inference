@@ -111,17 +111,7 @@ class BaseModel(nn.Module):
             if skip is False:
                 #import ipdb; ipdb.set_trace()
                 loaded &= self.loadWeights(model, os.path.join(self.saving_pth, name + suffix))
-        
-        if os.path.exists(os.path.join(self.saving_pth,'optimizer'+suffix)):
-            data = torch.load(os.path.join(self.saving_pth,'optimizer'+suffix))
-            self.optimizer.load_state_dict(data['optimizer'])
-            print(f'resume optimizer from {suffix}', flush=True)
-        
-        if os.path.exists(os.path.join(self.saving_pth,'lr_scheduler'+suffix)):
-            data = torch.load(os.path.join(self.saving_pth,'lr_scheduler'+suffix))
-            self.lr_scheduler.load_state_dict(data['lr_scheduler'])
-            print(f"resume lr scehduler from {suffix}", flush=True)
-            
+
         if loaded:
             print('\tmodel loaded!\n')
         else:

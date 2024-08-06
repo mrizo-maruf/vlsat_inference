@@ -129,9 +129,9 @@ class Mmgnet(BaseModel):
                 in_size=512, 
                 batch_norm=with_bn,drop_out=True)
             
-        self.init_weight(obj_label_path=mconfig.obj_label_path, \
-                         rel_label_path=mconfig.rel_label_path, \
-                         adapter_path=mconfig.adapter_path)
+        #self.init_weight(obj_label_path=mconfig.obj_label_path, \
+        #                 rel_label_path=mconfig.rel_label_path, \
+        #                 adapter_path=mconfig.adapter_path)
         
         mmg_obj, mmg_rel = [], []
         for name, para in self.mmg.named_parameters():
@@ -139,24 +139,7 @@ class Mmgnet(BaseModel):
                 mmg_rel.append(para)
             else:
                 mmg_obj.append(para)
-        
-        self.optimizer = optim.AdamW([
-            {'params':self.obj_encoder.parameters(), 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.rel_encoder_2d.parameters() , 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.rel_encoder_3d.parameters() , 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':mmg_obj, 'lr':float(config.LR) / 4, 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':mmg_rel, 'lr':float(config.LR) / 2, 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.obj_predictor_2d.parameters(), 'lr':float(config.LR) / 10, 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.rel_predictor_2d.parameters(), 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.obj_predictor_3d.parameters(), 'lr':float(config.LR) / 10, 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.rel_predictor_3d.parameters(), 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.mlp_3d.parameters(), 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.triplet_projector_3d.parameters(), 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.triplet_projector_2d.parameters(), 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-            {'params':self.obj_logit_scale, 'lr':float(config.LR), 'weight_decay':self.config.W_DECAY, 'amsgrad':self.config.AMSGRAD},
-        ])
-        self.lr_scheduler = CosineAnnealingLR(self.optimizer, T_max=self.config.max_iteration, last_epoch=-1)
-        self.optimizer.zero_grad()
+
 
     def init_weight(self, obj_label_path, rel_label_path, adapter_path):
         torch.nn.init.xavier_uniform_(self.mlp_3d[0].weight)

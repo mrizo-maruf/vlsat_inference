@@ -42,15 +42,11 @@ class MMGNet():
                                       use_normal=mconfig.USE_NORMAL)
             dataset = self.dataset_valid
 
-        num_obj_class = len(self.dataset_valid.classNames)   
-        num_rel_class = len(self.dataset_valid.relationNames)
+        num_obj_class = 160
+        num_rel_class = 26
         self.num_obj_class = num_obj_class
         self.num_rel_class = num_rel_class
-        
-        self.total = self.config.total = len(self.dataset_train) // self.config.Batch_Size
-        self.max_iteration = self.config.max_iteration = int(float(self.config.MAX_EPOCHES)*len(self.dataset_train) // self.config.Batch_Size)
-        self.max_iteration_scheduler = self.config.max_iteration_scheduler = int(float(100)*len(self.dataset_train) // self.config.Batch_Size)
-        
+
         ''' Build Model '''
         self.model = Mmgnet(self.config, num_obj_class, num_rel_class).to(config.DEVICE)
         self.samples_path = os.path.join(config.PATH, self.model_name, self.exp,  'samples')
