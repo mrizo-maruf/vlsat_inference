@@ -1,4 +1,4 @@
-## Module to predict semantic edges between point clouds based on VL-SAT method for 3DSSG.
+## Module for predicting semantic edges between point clouds based on VL-SAT method for 3DSSG.
 
 
 # Introduction
@@ -19,6 +19,8 @@ pip install torch-geometric
 pip install git+https://github.com/openai/CLIP.git
 ```
 # Prepare the data
+
+0. Download the pretrained checkpoint: [[checkpoint]](https://drive.google.com/file/d/1_C-LXRlSobupApb-JsajKG5oxKnfKgdx/view?usp=sharing), unzip folder.
 
 1. Create a folder with saved point clouds.
 
