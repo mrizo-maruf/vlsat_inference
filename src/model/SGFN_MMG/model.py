@@ -305,17 +305,8 @@ class Mmgnet(BaseModel):
         gcn_edge_feature_2d_dis = self.triplet_projector_2d(gcn_edge_feature_2d_dis)
 
         rel_cls_3d = self.rel_predictor_3d(gcn_edge_feature_3d)
-        rel_cls_2d = self.rel_predictor_2d(gcn_edge_feature_2d)
 
-        logit_scale = self.obj_logit_scale.exp()
-
-        obj_logits_3d = logit_scale * self.obj_predictor_3d(gcn_obj_feature_3d / gcn_obj_feature_3d.norm(dim=-1, keepdim=True))
-        obj_logits_2d = logit_scale * self.obj_predictor_2d(gcn_obj_feature_2d / gcn_obj_feature_2d.norm(dim=-1, keepdim=True))
-
-        if istrain:
-            return obj_logits_3d, obj_logits_2d, rel_cls_3d, rel_cls_2d, obj_feature_3d_mimic, obj_features_2d_mimic, gcn_edge_feature_2d_dis, logit_scale
-        else:
-            return obj_logits_3d, obj_logits_2d, rel_cls_3d, rel_cls_2d
+        return rel_cls_3d
 
     def process_train(self, obj_points, obj_2d_feats, gt_cls, descriptor, gt_rel_cls, edge_indices, batch_ids=None, with_log=False, ignore_none_rel=False, weights_obj=None, weights_rel=None):
         self.iteration +=1    

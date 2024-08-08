@@ -272,6 +272,8 @@ class SSGDatasetGraph(data.Dataset):
         
         instances_box, label_node = dict(), []
         obj_points = torch.zeros([num_objects, num_points, dim_point])
+        print(obj_points.shape)
+        input()
         descriptor = torch.zeros([num_objects, 11])
 
         obj_2d_feats = np.zeros([num_objects, 512])

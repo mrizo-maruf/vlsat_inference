@@ -1,25 +1,12 @@
-## :book: VL-SAT: Visual-Linguistic Semantics Assisted Training for 3D Semantic Scene Graph Prediction in Point Cloud (CVPR 2023 Highlight)
-<image src="demo.png" width="100%">
-<p align="center">
-  <small>:fire: If you found the training scheme in VL-SAT is useful, please help to :star: it or recommend it to your friends. Thanks:fire:</small>
-</p>
+## Module to predict semantic edges between point clouds based on VL-SAT method for 3DSSG.
 
 
 # Introduction
-This is a release of the code of our paper **_VL-SAT: Visual-Linguistic Semantics Assisted Training for 3D Semantic Scene Graph Prediction in Point Cloud_** (CVPR 2023 Highlight).
-
-Authors:
-Ziqin Wang,
-Bowen Cheng,
-Lichen Zhao,
-Dong Xu,
-Yang Tang,
-Lu Sheng* (*corresponding
-author)
+This is repository based on the source code of paper **_VL-SAT: Visual-Linguistic Semantics Assisted Training for 3D Semantic Scene Graph Prediction in Point Cloud_** (CVPR 2023 Highlight).
 
 [[arxiv]](https://arxiv.org/pdf/2303.14408.pdf)  [[code]](https://github.com/wz7in/CVPR2023-VLSAT)  [[checkpoint]](https://drive.google.com/file/d/1_C-LXRlSobupApb-JsajKG5oxKnfKgdx/view?usp=sharing)
 
-# Dependencies
+# Installation
 ```bash
 conda create -n vlsat python=3.8
 conda activate vlsat
@@ -32,58 +19,15 @@ pip install torch-geometric
 pip install git+https://github.com/openai/CLIP.git
 ```
 # Prepare the data
-A. Download 3Rscan and 3DSSG-Sub Annotation, you can follow [3DSSG](https://github.com/ShunChengWu/3DSSG#preparation)
 
-B. Generate 2D Multi View Image
-```bash
-# you should motify the path in pointcloud2image.py into your own path
-python data/pointcloud2image.py
-```
+1. Create a folder with saved point clouds.
 
-C. You should arrange the file location like this
-```
-data
-  3DSSG_subset
-    relations.txt
-    classes.txt
-    
-  3RScan
-    0a4b8ef6-a83a-21f2-8672-dce34dd0d7ca
-      multi_view
-      labels.instances.align.annotated.v2.ply
-    ...  
-      
-```
-
-D. Train your own clip adapter 
-
-``` python clip_adapter/main.py ```
-
-or just use the checkpoint 
-
-``` clip_adapter/checkpoint/origin_mean.pth ```
+2. Change paths in the main function [vlsat_inference.py](vlsat_inference.py) to your environment. Change the way of reading point clouds, if necessary.
 
 # Run Code
 ```bash
-# Train
-python -m main --mode train --config <config_path> --exp <exp_name>
-# Eval
-python -m main --mode eval --config <config_path> --exp <exp_name>
-```
-In this repo, we have provided a default [config](https://github.com/wz7in/CVPR2023-VLSAT/blob/main/config/mmgnet.json)
-
-# Paper
-
-If you find the code useful please consider citing our [paper](https://arxiv.org/pdf/2303.14408.pdf):
-```
-@article{wang2023vl,
-  title={VL-SAT: Visual-Linguistic Semantics Assisted Training for 3D Semantic Scene Graph Prediction in Point Cloud},
-  author={Wang, Ziqin and Cheng, Bowen and Zhao, Lichen and Xu, Dong and Tang, Yang and Sheng, Lu},
-  journal={arXiv preprint arXiv:2303.14408},
-  year={2023}
-}
+# Base inference with wrapper class EdgePredictor.
+python vlsat_inference.py
 ```
 
-
-# Acknowledgement
-This repository is partly based on [3DSSG](https://github.com/ShunChengWu/3DSSG) and [CLIP](https://github.com/openai/CLIP) repositories.
+You can visualize point clouds with [visualize_pointclouds.ipynb](visualize_pointclouds.ipynb) notebook.

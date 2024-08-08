@@ -180,7 +180,8 @@ class MMG(torch.nn.Module):
         # compute weight for obj
         if obj_center is not None:
             # get attention weight for object
-            batch_size = batch_ids.max().item() + 1
+            #batch_size = batch_ids.max().item() + 1
+            batch_size = 1
             N_K = obj_feature_3d.shape[0]
             obj_mask = torch.zeros(1, 1, N_K, N_K).cuda()
             obj_distance_weight = torch.zeros(1, self.num_heads, N_K, N_K).cuda()
