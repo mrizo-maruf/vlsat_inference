@@ -26,6 +26,7 @@ class EdgePredictor:
         else:
             self.config.DEVICE = torch.device("cpu")
         self.model.load(best=True)
+        self.model.model.eval()
         with open(relationships_list, "r") as f:
             self.relationships_list = f.readlines()
         
@@ -72,7 +73,6 @@ class EdgePredictor:
         edge_indices = edge_indices.to(self.config.DEVICE)
         descriptor = descriptor.to(self.config.DEVICE)
         batch_ids = batch_ids.to(self.config.DEVICE)
-        self.model.model.eval()
         with torch.no_grad():
             rel_cls_3d = self.model.model(
                 obj_points, obj_2d_feats, edge_indices, descriptor, batch_ids=batch_ids
@@ -120,31 +120,28 @@ class EdgePredictor:
 def main():
     config_path = "config/mmgnet.json"
     ckpt_path = "/hdd/wingrune/3dssg_best_ckpt"
-    data_path = "./point_clouds-2"
+    data_path = "./point_clouds"
     relationships_list = "/home/wingrune/CVPR2023-VLSAT/data/3DSSG_subset/relationships.txt"
 
-    tracking_ids = ['786', '1024']
-    timestamps = ["001539", '001539']
-    class_names = ["orange box", "green box"]
+    tracking_ids = ['7', '7']
+    timestamps = ["001539", "001540"]
+    class_names = ["box_black", "box_carton"]
 
     pcds = {}
-    dirname = "point_clouds-2"
-    framename = "frame_336.json"
-    with open(os.path.join(dirname, framename)) as f:
-        frame = json.load(f)
-    
-    for i, track_id in enumerate(tracking_ids):
-        pcds[track_id] = {}
-        pcds[track_id][timestamps[i]] = {}
-        for obj in frame["tracked_objects"]:
-            if obj["tracking_id"] == int(track_id):
-                pcds[track_id][timestamps[i]]['point_cloud'] = copy.deepcopy(np.array(obj['point_cloud']))
-                pcds[track_id][timestamps[i]]['point_cloud'] = pcds[track_id][timestamps[i]]['point_cloud'][:, [2, 0, 1]]
-                pcds[track_id][timestamps[i]]['position'] = [
-                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 0]),2),
-                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 1]),2),
-                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 2]),2),
-                ]
+    for pcd_path in os.listdir(data_path):
+        _, _, _, timecode, _, obj_id = pcd_path.split(".")[0].split("_")
+        if obj_id not in pcds:
+            pcds[obj_id] = {}
+        data_dict = np.load(os.path.join(data_path, pcd_path), allow_pickle=True).item()
+        pcds[obj_id][timecode] = {}
+        pcds[obj_id][timecode]['point_cloud'] = copy.deepcopy(data_dict['point_cloud'])
+        #pcds[obj_id][timecode]['point_cloud'][:, 1] = (-1)*pcds[obj_id][timecode]['point_cloud'][:, 1]
+        pcds[obj_id][timecode]['position'] = [
+            np.round(np.mean(pcds[obj_id][timecode]['point_cloud'][:,0]),2),
+            np.round(np.mean(pcds[obj_id][timecode]['point_cloud'][:,1]),2),
+            np.round(np.mean(pcds[obj_id][timecode]['point_cloud'][:,2]),2)
+        ]
+
 
     print("Loaded the following saved pointclouds:")
     for obj_id, obj_pcds in pcds.items():
@@ -155,15 +152,15 @@ def main():
 
     obj_points, obj_2d_feats, edge_indices, descriptor, batch_ids = edge_predictor.preprocess_poinclouds(
         [
-            pcds['786']["001539"]['point_cloud'],
-            pcds['1024']["001539"]['point_cloud']
+            pcds['7']["001539"]['point_cloud'],
+            pcds['7']["001540"]['point_cloud']
         ],
         edge_predictor.config.dataset.num_points
     )
     predicted_relations = edge_predictor.predict_relations(obj_points, obj_2d_feats, edge_indices, descriptor, batch_ids)
-    #print(predicted_relations.shape)
-    #topk_values, topk_indices = torch.topk(predicted_relations, 5, dim=1,  largest=True)
-    #print(topk_indices, topk_values)
+    print(predicted_relations.shape)
+    topk_values, topk_indices = torch.topk(predicted_relations, 5, dim=1,  largest=True)
+    print(topk_indices, topk_values)
     saved_relations = edge_predictor.save_relations(tracking_ids, timestamps, class_names, predicted_relations, edge_indices)
 
     print("Predicted the following relations:")
