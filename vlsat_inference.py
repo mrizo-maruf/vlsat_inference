@@ -221,16 +221,16 @@ def main():
                 print(xv.shape, yv.shape, zv.shape)
                 #print(xv.flatten())
                 grid_pc = np.stack((xv.flatten(), yv.flatten(), zv.flatten()), axis=1)
-                pcds[track_id][timestamps[i]]['point_cloud'] = pcd_array
-                pcds[track_id][timestamps[i]]['point_cloud'] = pcds[track_id][timestamps[i]]['point_cloud'][:, [2, 0, 1]]
-                pcds[track_id][timestamps[i]]['point_cloud'][:, 0] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 0]
+                pcds[track_id][timestamps[i]]['point_cloud'] = grid_pc
+                #pcds[track_id][timestamps[i]]['point_cloud'] = pcds[track_id][timestamps[i]]['point_cloud'][:, [2, 0, 1]]
+                #pcds[track_id][timestamps[i]]['point_cloud'][:, 0] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 0]
                 #pcds[track_id][timestamps[i]]['point_cloud'][:, 1] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 1]
-                pcds[track_id][timestamps[i]]['point_cloud'][:, 2] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 2]
-                pcds[track_id][timestamps[i]]['position'] = [
-                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 0]),2),
-                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 1]),2),
-                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 2]),2),
-                ]
+                #pcds[track_id][timestamps[i]]['point_cloud'][:, 2] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 2]
+                #pcds[track_id][timestamps[i]]['position'] = [
+                #    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 0]),2),
+                #    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 1]),2),
+                #    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 2]),2),
+                #]
 
 
     print("Loaded the following saved pointclouds:")
