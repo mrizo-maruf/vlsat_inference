@@ -70,7 +70,7 @@
     "_label_file": ["labels.instances.align.annotated.v2.ply", "inseg.ply", "cvvseg.ply"],
     "label_file": "labels.instances.align.annotated.v2.ply",
     "data_augmentation": false,
-    "num_points": 128,
+    "num_points": 4096,
     "num_points_union": 256,
     "disable_support_rel": false,
     "with_bbox": false,

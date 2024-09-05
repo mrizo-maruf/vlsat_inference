@@ -4,6 +4,8 @@ import numpy as np
 import copy
 import torch
 from itertools import product
+from collections import Counter
+import open3d as o3d
 import torch.nn.functional as F
 
 if __name__ == '__main__':
@@ -61,7 +63,7 @@ class EdgePredictor:
             pcd = self.zero_mean(pcd)
             obj_points[i] = pcd
 
-        edge_indices = torch.tensor(edge_indices, dtype=torch.long)
+        edge_indices = torch.tensor(edge_indices, dtype=torch.long).permute(1, 0)
         obj_2d_feats = torch.from_numpy(obj_2d_feats.astype(np.float32))    
         obj_points = obj_points.permute(0, 2, 1)
         batch_ids = torch.zeros((num_objects, 1))
@@ -82,8 +84,8 @@ class EdgePredictor:
     def save_relations(self, tracking_ids, timestamps, class_names, predicted_relations, edge_indices):
         saved_relations = []
         for k in range(predicted_relations.shape[0]):
-            idx_1 = edge_indices[k][0].item()
-            idx_2 = edge_indices[k][1].item()
+            idx_1 = edge_indices[0][k].item()
+            idx_2 = edge_indices[1][k].item()
 
             id_1 = tracking_ids[idx_1]
             id_2 = tracking_ids[idx_2]
@@ -98,14 +100,15 @@ class EdgePredictor:
             rel_name = self.rel_id_to_rel_name[rel_id]
 
             rel_dict = {
-                "id_1": id_1,
-                "timestamp_1": timestamp_1,
+                #"id_1": id_1,
+                #"timestamp_1": timestamp_1,
                 "class_name_1": class_name_1,
-                "id_2": id_2,
-                "timestamp_2": timestamp_2,
+                "rel_name": rel_name,
+                #"id_2": id_2,
+                #"timestamp_2": timestamp_2,
                 "class_name_2": class_name_2,
-                "rel_id": rel_id,
-                "rel_name": rel_name
+                #"rel_id": rel_id,
+                
             }
             saved_relations.append(rel_dict)
 
@@ -116,6 +119,47 @@ class EdgePredictor:
         point -= mean.unsqueeze(0)
         return point
 
+def pcd_denoise_dbscan(pcd: o3d.geometry.PointCloud, eps=0.02, min_points=10) -> o3d.geometry.PointCloud:
+    ### Remove noise via clustering
+    pcd_clusters = pcd.cluster_dbscan(
+        eps=eps,
+        min_points=min_points,
+    )
+    
+    # Convert to numpy arrays
+    obj_points = np.asarray(pcd.points)
+    #obj_colors = np.asarray(pcd.colors)
+    pcd_clusters = np.array(pcd_clusters)
+
+    # Count all labels in the cluster
+    counter = Counter(pcd_clusters)
+
+    # Remove the noise label
+    if counter and (-1 in counter):
+        del counter[-1]
+
+    if counter:
+        # Find the label of the largest cluster
+        most_common_label, _ = counter.most_common(1)[0]
+        
+        # Create mask for points in the largest cluster
+        largest_mask = pcd_clusters == most_common_label
+
+        # Apply mask
+        largest_cluster_points = obj_points[largest_mask]
+        #largest_cluster_colors = obj_colors[largest_mask]
+        
+        # If the largest cluster is too small, return the original point cloud
+        if len(largest_cluster_points) < 5:
+            return pcd
+
+        # Create a new PointCloud object
+        largest_cluster_pcd = o3d.geometry.PointCloud()
+        largest_cluster_pcd.points = o3d.utility.Vector3dVector(largest_cluster_points)
+        
+        pcd = largest_cluster_pcd
+        
+    return pcd
 
 def main():
     config_path = "config/mmgnet.json"
@@ -123,24 +167,70 @@ def main():
     data_path = "./point_clouds"
     relationships_list = "/home/wingrune/CVPR2023-VLSAT/data/3DSSG_subset/relationships.txt"
 
-    tracking_ids = ['7', '7']
-    timestamps = ["001539", "001540"]
-    class_names = ["box_black", "box_carton"]
+    tracking_ids = ['0', '1', '3', '4']
+    timestamps = ["001539", '001539', "001539", '001539']
+    class_names = ["orange box", "green box", 'blue box', 'pink box']
 
     pcds = {}
-    for pcd_path in os.listdir(data_path):
-        _, _, _, timecode, _, obj_id = pcd_path.split(".")[0].split("_")
-        if obj_id not in pcds:
-            pcds[obj_id] = {}
-        data_dict = np.load(os.path.join(data_path, pcd_path), allow_pickle=True).item()
-        pcds[obj_id][timecode] = {}
-        pcds[obj_id][timecode]['point_cloud'] = copy.deepcopy(data_dict['point_cloud'])
-        #pcds[obj_id][timecode]['point_cloud'][:, 1] = (-1)*pcds[obj_id][timecode]['point_cloud'][:, 1]
-        pcds[obj_id][timecode]['position'] = [
-            np.round(np.mean(pcds[obj_id][timecode]['point_cloud'][:,0]),2),
-            np.round(np.mean(pcds[obj_id][timecode]['point_cloud'][:,1]),2),
-            np.round(np.mean(pcds[obj_id][timecode]['point_cloud'][:,2]),2)
-        ]
+    dirname = "point_clouds-2/point_clouds"
+    framename = "frame_1.json"
+    with open(os.path.join(dirname, framename)) as f:
+        frame = json.load(f)
+    
+    for i, track_id in enumerate(tracking_ids):
+        pcds[track_id] = {}
+        pcds[track_id][timestamps[i]] = {}
+        for obj in frame["tracked_objects"]:
+            if obj["tracking_id"] == int(track_id):
+                """
+                pose = obj["pose"]
+                size = obj["dimensions"]
+                nx, ny, nz = (2, 2, 2)
+                x = np.linspace(pose[0] - size[0]/2, pose[0] + size[0]/2, nx)
+                y = np.linspace(pose[1] - size[1]/2, pose[1] + size[1]/2, ny)
+                z = np.linspace(pose[2] - size[2]/2, pose[2] + size[2]/2, nz)
+                xv, yv, zv = np.meshgrid(x, y, z)
+                print(x.shape, y.shape, z.shape)
+                print(xv)
+                print(xv.shape, yv.shape, zv.shape)
+                print(xv.flatten())
+                grid_pc = np.stack((xv.flatten(), yv.flatten(), zv.flatten()), axis=1)
+                print(grid_pc.shape)
+                print(grid_pc)
+                exit()
+                """
+                pcd_o3d = o3d.geometry.PointCloud()
+                pcd_o3d.points = o3d.utility.Vector3dVector(obj['point_cloud'])
+                pcd = pcd_denoise_dbscan(pcd_o3d)
+                pose = obj["pose"]
+                #pose = [-obj["pose"][0], -obj["pose"][1], obj["pose"][2]]
+                pcd_array = np.array(pcd.points)
+                #size = [
+                #    np.max(pcd_array[:,2]) - np.min(pcd_array[:,2]),
+                #    np.max(pcd_array[:,0]) - np.min(pcd_array[:,0]),
+                #    np.max(pcd_array[:,1]) - np.min(pcd_array[:,1]),
+                #]
+                size = [0.3, 0.3, 0.15]
+                nx, ny, nz = (16, 16, 16)
+                x = np.linspace(pose[0] - size[0]/2, pose[0] + size[0]/2, nx)
+                y = np.linspace(pose[1] - size[1]/2, pose[1] + size[1]/2, ny)
+                z = np.linspace(pose[2] - size[2]/2, pose[2] + size[2]/2, nz)
+                xv, yv, zv = np.meshgrid(x, y, z)
+                print(x.shape, y.shape, z.shape)
+                #print(xv)
+                print(xv.shape, yv.shape, zv.shape)
+                #print(xv.flatten())
+                grid_pc = np.stack((xv.flatten(), yv.flatten(), zv.flatten()), axis=1)
+                pcds[track_id][timestamps[i]]['point_cloud'] = pcd_array
+                pcds[track_id][timestamps[i]]['point_cloud'] = pcds[track_id][timestamps[i]]['point_cloud'][:, [2, 0, 1]]
+                pcds[track_id][timestamps[i]]['point_cloud'][:, 0] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 0]
+                #pcds[track_id][timestamps[i]]['point_cloud'][:, 1] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 1]
+                pcds[track_id][timestamps[i]]['point_cloud'][:, 2] = (-1)*pcds[track_id][timestamps[i]]['point_cloud'][:, 2]
+                pcds[track_id][timestamps[i]]['position'] = [
+                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 0]),2),
+                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 1]),2),
+                    np.round(np.mean(pcds[track_id][timestamps[i]]['point_cloud'][:, 2]),2),
+                ]
 
 
     print("Loaded the following saved pointclouds:")
@@ -152,19 +242,21 @@ def main():
 
     obj_points, obj_2d_feats, edge_indices, descriptor, batch_ids = edge_predictor.preprocess_poinclouds(
         [
-            pcds['7']["001539"]['point_cloud'],
-            pcds['7']["001540"]['point_cloud']
+            pcds['0']["001539"]['point_cloud'],
+            pcds['1']["001539"]['point_cloud'],
+            pcds['3']["001539"]['point_cloud'],
+            pcds['4']["001539"]['point_cloud'],
         ],
         edge_predictor.config.dataset.num_points
     )
     predicted_relations = edge_predictor.predict_relations(obj_points, obj_2d_feats, edge_indices, descriptor, batch_ids)
-    print(predicted_relations.shape)
+    #print(predicted_relations.shape)
     topk_values, topk_indices = torch.topk(predicted_relations, 5, dim=1,  largest=True)
     print(topk_indices, topk_values)
     saved_relations = edge_predictor.save_relations(tracking_ids, timestamps, class_names, predicted_relations, edge_indices)
 
     print("Predicted the following relations:")
-    print(saved_relations)
+    print(json.dumps(saved_relations, indent=4))
     return saved_relations
 
 
