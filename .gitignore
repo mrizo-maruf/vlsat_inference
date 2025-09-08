@@ -54,3 +54,8 @@ __pycache__
 */*/__pycache__
 point_clouds/
 *.pyc
+
+*.0
+*.pth
+.vscode/
+.idea/

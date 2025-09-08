@@ -1,5 +1,14 @@
 ## Module for predicting semantic edges between point clouds based on VL-SAT method for 3DSSG.
 
+# bbq_vis.py
+* used to visualise bbq pkl files
+* flags:
+```
+show_bbox=True,
+show_center=False, 
+print_color_mapping=False,
+print_edges=True
+```
 
 # Introduction
 This is repository based on the source code of paper **_VL-SAT: Visual-Linguistic Semantics Assisted Training for 3D Semantic Scene Graph Prediction in Point Cloud_** (CVPR 2023 Highlight).
