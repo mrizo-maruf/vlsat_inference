@@ -26,7 +26,7 @@ def _create_text_label(text, position, color=(1,1,1)):
     except Exception:
         return None
 
-def visualize_bbq_objects(bbq_objects, show_bbox=True, show_center=False, print_color_mapping=False, print_edges=True):
+def visualize_bbq_objects(bbq_objects, show_bbox=True, show_center=False, print_color_mapping=True, print_edges=False):
     """
     Displays a list of BBQ objects in a single interactive Open3D window.
     Each object is given a different color and its bounding box and center are shown.
@@ -240,7 +240,8 @@ if __name__ == "__main__":
     # input_file = "/home/rizo/mipt_ccm/bbq/GRASSETSANDMODELS/scene/scene_test/2.pkl.gz"
     # input_file = "/home/rizo/mipt_ccm/bbq/08.27.2025_14:25:15_isaac_warehouse_objects.pkl.gz"
     input_file = "/home/rizo/mipt_ccm/bbq/08.27.2025_16:24:41_isaac_warehouse_objects.pkl.gz"
-    input_file = "/home/rizo/mipt_ccm/bbq/bbq_results/warehouse12_str1.pkl.gz"
+    input_file = "/home/rizo/mipt_ccm/bbq/bbq_results/scenes_scene_3ch_1t/scene_3ch_1t_str1.pkl.gz"
+    input_file = "/home/rizo/mipt_ccm/bbq/bbq_results/scenes_scene_3ch_1t/scene_3ch_1t_str1_cleaned.pkl.gz"
     # --- Load the data ---
     if not os.path.exists(input_file):
         print(f"Error: Input file not found at {input_file}")
